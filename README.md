@@ -1,4 +1,4 @@
-## 🛠️ Explicación del Código Fuente (`app.py`)
+## Explicación del Código Fuente (`app.py`)
 
 El archivo `app.py` gestiona la interfaz gráfica de usuario (UI), el procesamiento de imágenes, la inferencia del modelo de visión artificial y la integración con el LLM de Groq. A continuación se detalla la estructura lógica del programa:
 
