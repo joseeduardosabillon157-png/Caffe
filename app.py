@@ -4,6 +4,7 @@ from PIL import Image
 import numpy as np
 import os
 import re
+import gdown
 from groq import Groq
 
 
@@ -14,22 +15,18 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-
 st.markdown("""
 <style>
-    /* Importación de fuentes */
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
 
     html, body, [class*="css"] {
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
-    /* Fondo de la app */
     .stApp {
         background: linear-gradient(135deg, #f4f7f4 0%, #eef2ed 100%);
     }
 
-    /* Banner Superior Hero */
     .hero-container {
         background: linear-gradient(90deg, #1b3b22 0%, #2d5a37 100%);
         padding: 24px 32px;
@@ -54,17 +51,6 @@ st.markdown("""
         font-weight: 400;
     }
 
-    /* Contenedor tipo Tarjeta */
-    .custom-card {
-        background: #ffffff;
-        border-radius: 16px;
-        padding: 24px;
-        border: 1px solid rgba(0, 0, 0, 0.05);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.03);
-        margin-bottom: 20px;
-    }
-
-    /* Títulos de sección */
     .section-header {
         font-size: 18px;
         font-weight: 700;
@@ -75,7 +61,6 @@ st.markdown("""
         gap: 8px;
     }
 
-    /* Badge de Diagnóstico */
     .disease-badge {
         background-color: #fde8e8;
         color: #9b1c1c;
@@ -87,7 +72,6 @@ st.markdown("""
         border: 1px solid #fbd5d5;
     }
 
-    /* Bloque de Confianza */
     .confidence-box {
         background: #f0fdf4;
         border: 1px solid #bbf7d0;
@@ -110,7 +94,6 @@ st.markdown("""
         margin-top: 4px;
     }
 
-    /* Tarjetas de recomendaciones de Groq */
     .rec-item {
         background-color: #f9fafb;
         border-left: 4px solid #2d5a37;
@@ -119,17 +102,7 @@ st.markdown("""
         margin-bottom: 12px;
         box-shadow: 0 2px 5px rgba(0,0,0,0.02);
     }
-    .rec-number {
-        background-color: #1b3b22;
-        color: #ffffff;
-        font-weight: 700;
-        font-size: 12px;
-        padding: 3px 8px;
-        border-radius: 6px;
-        margin-right: 8px;
-    }
 
-    /* Footer */
     .footer {
         text-align: center;
         padding: 20px;
@@ -143,13 +116,27 @@ st.markdown("""
 st.markdown("""
 <div class="hero-container">
     <div class="hero-title">🍃 AGRODETECT <span style="font-weight:300; font-size: 20px;">| Detección Foliar de Café</span></div>
-    <div class="hero-subtitle">Sistema inteligente con Diagnóstico por Visión Artificial y Asistente Agrónomo IA (Groq)</div>
+    <div class="hero-subtitle">Sistema Inteligente con Diagnóstico por Visión Artificial y Asistente Agrónomo IA (Groq)</div>
 </div>
 """, unsafe_allow_html=True)
 
+
+MODEL_PATH = "coffee_disease_model.h5"
+
+GDRIVE_FILE_ID = "TU_ID_DE_DRIVE" 
+
 @st.cache_resource
 def load_keras_model():
-    return tf.keras.models.load_model('coffee_disease_model.h5')
+    if not os.path.exists(MODEL_PATH):
+        if GDRIVE_FILE_ID != "TU_ID_DE_DRIVE":
+            with st.spinner("Descargando el modelo de IA por primera vez..."):
+                url = f"https://drive.google.com/uc?id={GDRIVE_FILE_ID}"
+                gdown.download(url, MODEL_PATH, quiet=False)
+        else:
+            st.error("⚠️ Falta configurar el ID de Google Drive en `GDRIVE_FILE_ID` en app.py")
+            st.stop()
+            
+    return tf.keras.models.load_model(MODEL_PATH)
 
 try:
     model = load_keras_model()
@@ -157,6 +144,7 @@ try:
 except Exception as e:
     st.error(f"⚠️ Error al cargar el modelo de IA: {e}")
     st.stop()
+
 
 def get_groq_recommendations(disease_name):
     api_key = st.secrets.get("GROQ_API_KEY", os.environ.get("GROQ_API_KEY"))
@@ -191,7 +179,6 @@ def get_groq_recommendations(disease_name):
 
 col_left, col_right = st.columns([1, 1.2], gap="large")
 
-
 with col_left:
     st.markdown('<div class="section-header">📷 Captura de Imagen Foliar</div>', unsafe_allow_html=True)
     st.caption("Suba una fotografía clara de la hoja de café bajo buena luz natural.")
@@ -217,7 +204,6 @@ with col_right:
     st.markdown('<div class="section-header">📊 Diagnóstico y Recomendaciones</div>', unsafe_allow_html=True)
     
     if uploaded_file is not None:
-        
         img_resized = image.resize((224, 224))
         img_array = np.expand_dims(np.array(img_resized) / 255.0, axis=0)
         
@@ -225,7 +211,7 @@ with col_right:
         class_idx = np.argmax(predictions[0])
         confidence = float(predictions[0][class_idx]) * 100
         detected_disease = CLASS_NAMES[class_idx]
-        
+
         res_col1, res_col2 = st.columns([2, 1])
         
         with res_col1:
