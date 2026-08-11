@@ -193,7 +193,7 @@ with col_left:
 
     if uploaded_file:
         image = Image.open(uploaded_file).convert('RGB')
-        st.image(image, use_column_width=True, caption="Imagen cargada correctamente")
+        st.image(image, use_container_width=True, caption="Imagen cargada correctamente")
 
 with col_right:
     st.markdown('<div class="section-header">📊 Diagnóstico y Recomendaciones</div>', unsafe_allow_html=True)
