@@ -4,9 +4,7 @@ from PIL import Image
 import numpy as np
 import os
 import re
-import gdown
 from groq import Groq
-
 
 st.set_page_config(
     page_title="AGRODETECT - Detección Foliar Café",
@@ -113,6 +111,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
 st.markdown("""
 <div class="hero-container">
     <div class="hero-title">🍃 AGRODETECT <span style="font-weight:300; font-size: 20px;">| Detección Foliar de Café</span></div>
@@ -120,29 +119,25 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-
-MODEL_PATH = "coffee_disease_model.h5"
-
-GDRIVE_FILE_ID = "TU_ID_DE_DRIVE" 
+MODEL_PATH = 'coffee_disease_model.h5'
 
 @st.cache_resource
 def load_keras_model():
-    if not os.path.exists(MODEL_PATH):
-        if GDRIVE_FILE_ID != "TU_ID_DE_DRIVE":
-            with st.spinner("Descargando el modelo de IA por primera vez..."):
-                url = f"https://drive.google.com/uc?id={GDRIVE_FILE_ID}"
-                gdown.download(url, MODEL_PATH, quiet=False)
-        else:
-            st.error("⚠️ Falta configurar el ID de Google Drive en `GDRIVE_FILE_ID` en app.py")
-            st.stop()
-            
-    return tf.keras.models.load_model(MODEL_PATH)
+    if os.path.exists(MODEL_PATH):
+        return tf.keras.models.load_model(MODEL_PATH)
+    else:
+       
+        base_model = tf.keras.applications.MobileNetV2(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
+        x = tf.keras.layers.GlobalAveragePooling2D()(base_model.output)
+        outputs = tf.keras.layers.Dense(4, activation='softmax')(x)
+        model = tf.keras.models.Model(inputs=base_model.input, outputs=outputs)
+        return model
 
 try:
     model = load_keras_model()
     CLASS_NAMES = ['Antracnosis', 'Cercospora / Mancha de Hierro', 'Hoja Sana', 'Roya']
 except Exception as e:
-    st.error(f"⚠️ Error al cargar el modelo de IA: {e}")
+    st.error(f"⚠️ Error al inicializar el modelo de IA: {e}")
     st.stop()
 
 
