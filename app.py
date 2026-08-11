@@ -6,9 +6,7 @@ import os
 import re
 from groq import Groq
 
-# -----------------------------------------------------------------------------
-# CONFIGURACIÓN DE PÁGINA
-# -----------------------------------------------------------------------------
+
 st.set_page_config(
     page_title="AGRODETECT - Detección Foliar Café",
     page_icon="🍃",
@@ -16,9 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# -----------------------------------------------------------------------------
-# CSS PERSONALIZADO (DISEÑO MODERNO Y LLAMATIVO)
-# -----------------------------------------------------------------------------
+
 st.markdown("""
 <style>
     /* Importación de fuentes */
@@ -144,9 +140,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# -----------------------------------------------------------------------------
-# HERO BANNER
-# -----------------------------------------------------------------------------
 st.markdown("""
 <div class="hero-container">
     <div class="hero-title">🍃 AGRODETECT <span style="font-weight:300; font-size: 20px;">| Detección Foliar de Café</span></div>
@@ -154,9 +147,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# -----------------------------------------------------------------------------
-# CARGA DEL MODELO
-# -----------------------------------------------------------------------------
 @st.cache_resource
 def load_keras_model():
     return tf.keras.models.load_model('coffee_disease_model.h5')
@@ -168,9 +158,6 @@ except Exception as e:
     st.error(f"⚠️ Error al cargar el modelo de IA: {e}")
     st.stop()
 
-# -----------------------------------------------------------------------------
-# FUNCIÓN DE CONSULTA A GROQ API
-# -----------------------------------------------------------------------------
 def get_groq_recommendations(disease_name):
     api_key = st.secrets.get("GROQ_API_KEY", os.environ.get("GROQ_API_KEY"))
     if not api_key:
@@ -201,12 +188,10 @@ def get_groq_recommendations(disease_name):
     except Exception as e:
         return f"Error al consultar la API de Groq: {e}"
 
-# -----------------------------------------------------------------------------
-# ESTRUCTURA DE LA INTERFAZ
-# -----------------------------------------------------------------------------
+
 col_left, col_right = st.columns([1, 1.2], gap="large")
 
-# --- COLUMNA IZQUIERDA: ENTRADA DE IMAGEN ---
+
 with col_left:
     st.markdown('<div class="section-header">📷 Captura de Imagen Foliar</div>', unsafe_allow_html=True)
     st.caption("Suba una fotografía clara de la hoja de café bajo buena luz natural.")
@@ -228,12 +213,11 @@ with col_left:
         image = Image.open(uploaded_file).convert('RGB')
         st.image(image, use_column_width=True, caption="Imagen cargada correctamente")
 
-# --- COLUMNA DERECHA: RESULTADOS Y RECOMENDACIONES ---
 with col_right:
     st.markdown('<div class="section-header">📊 Diagnóstico y Recomendaciones</div>', unsafe_allow_html=True)
     
     if uploaded_file is not None:
-        # Preprocesamiento y Predicción
+        
         img_resized = image.resize((224, 224))
         img_array = np.expand_dims(np.array(img_resized) / 255.0, axis=0)
         
@@ -241,8 +225,7 @@ with col_right:
         class_idx = np.argmax(predictions[0])
         confidence = float(predictions[0][class_idx]) * 100
         detected_disease = CLASS_NAMES[class_idx]
-
-        # Tarjeta de Diagnóstico Principal
+        
         res_col1, res_col2 = st.columns([2, 1])
         
         with res_col1:
@@ -267,7 +250,6 @@ with col_right:
         with st.spinner("Generando plan de manejo agronómico personalizado..."):
             groq_response = get_groq_recommendations(detected_disease)
         
-        # Formateo visual llamativo para la respuesta de Groq
         points = re.split(r'\n(?=\d+\.)', groq_response.strip())
         if len(points) > 1:
             for pt in points:
@@ -285,9 +267,6 @@ with col_right:
         </div>
         """, unsafe_allow_html=True)
 
-# -----------------------------------------------------------------------------
-# FOOTER
-# -----------------------------------------------------------------------------
 st.markdown("""
 <div class="footer">
     © 2026 <b>AGRODETECT</b> — Plataforma Agrónoma con IA | Soporte para cultivo de café
